@@ -39,7 +39,6 @@ hs_err_pid*
 .history
 
 ### Exclude from this homework ###
-OSP.log
-Demo.jar
+Memory/Demo.jar
 
 # End of https://www.gitignore.io/api/java,visualstudiocode
