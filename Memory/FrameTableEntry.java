@@ -11,6 +11,16 @@ import osp.Interrupts.*;
 import osp.Utilities.*;
 import osp.IFLModules.IflFrameTableEntry;
 
+/**
+ * Name: Bryan Valarezo
+ * StudentID: 110362410
+ * 
+ * I pledge my honor that all parts of this project were done by me individually, without 
+ * collaboration with anyone, and without consulting any external sources that provide 
+ * full or partial solutions to a similar project. 
+ * I understand that breaking this pledge will result in an “F” for the entire course.
+ */
+
 public class FrameTableEntry extends IflFrameTableEntry
 {
     /**
@@ -24,8 +34,10 @@ public class FrameTableEntry extends IflFrameTableEntry
     */
     public FrameTableEntry(int frameID)
     {
-        // your code goes here
-
+        // Calls super(frameID) and might perform other inits if the student
+        // implementation defines additional fields in this class
+        super(frameID);
+        //other inits?
     }
 
 

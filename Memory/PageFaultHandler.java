@@ -11,6 +11,16 @@ import osp.Utilities.*;
 import osp.IFLModules.*;
 
 /**
+ * Name: Bryan Valarezo
+ * StudentID: 110362410
+ * 
+ * I pledge my honor that all parts of this project were done by me individually, without 
+ * collaboration with anyone, and without consulting any external sources that provide 
+ * full or partial solutions to a similar project. 
+ * I understand that breaking this pledge will result in an “F” for the entire course.
+ */
+
+/**
     The page fault handler is responsible for handling a page
     fault.  If a swap in or swap out operation is required, the page fault
     handler must request the operation.
@@ -77,7 +87,22 @@ public class PageFaultHandler extends IflPageFaultHandler
 					 PageTableEntry page)
     {
         // your code goes here
-
+        //given thread and page that casued pagefault
+        //reference is read, write, or lock
+        //set dirty on write, not read or lock
+        //check if page is valid, if so than return Failure because thats a waste of time
+        //its possible that all frames are locked or reserved
+        //return ENOMEM if this is so
+        //
+        //do function
+        //
+        //finally check this
+        // its possible that the thread could be SiGKILLED, return Failure if so
+        //else, cool
+        //notifyThreads() that are waiting on the page
+        //dispatch()
+        //return SUCCESS
+        //see page 105-107
     }
 
 

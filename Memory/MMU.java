@@ -26,6 +26,8 @@ public class MMU extends IflMMU
     public static void init()
     {
         // your code goes here
+        //inti Frame Table in a for loop
+        //Each entry needs to be an Obj, not null
 
     }
 
@@ -52,6 +54,28 @@ public class MMU extends IflMMU
 					  int referenceType, ThreadCB thread)
     {
         // your code goes here
+        //see Page 101
+        //determine the page of the thread's logical memory
+        //use getVirtualAddressBits() and getPageAddressBits()
+        //we can compute page  size and offset
+        //more importantly the page the addr belongs to
+        //get page
+        //Check if the page is valid
+        //If valid, then set the referenced the the dirty bits and quit
+        //else, then
+        //1. Some other thread of the same task has already caused the pagefault and we are waiting
+        //2. No other thread caused a page fault(FRESH)
+        //use getValidatingThread()
+        //if 1. Suspend() thread
+        //make sure Thread is now ThreadKill with getStatus()
+        //if 2. cause a PageFault
+        //InterruptVector Class construct with setPage(), setReferenceTpye(), setThread()
+        //call interrupt() of type PageFault
+        //After interrrupt(), PAGE WILL BE IN Main Mem.
+        //thread will be in readyQ
+        //before exit, set the reference and dirty bits
+        //Keep in mind of SIGKILL 
+        //return the referenced page
 
     }
 
