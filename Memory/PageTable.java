@@ -57,6 +57,7 @@ public class PageTable extends IflPageTable
     */
     public void do_deallocateMemory()
     {
+        //TODO
         // your code goes here
         // unset the various flags (setPage() to null it ) of the Frame
         //for i in pgaetable

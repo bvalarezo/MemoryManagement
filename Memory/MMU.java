@@ -16,8 +16,7 @@ import osp.Interrupts.*;
     @OSPProject Memory
 */
 public class MMU extends IflMMU
-{
-    public static ArrayList<FrameTableEntry> frameTable;
+{    
     /** 
         This method is called once before the simulation starts. 
 	Can be used to initialize the frame table and other static variables.
@@ -26,19 +25,17 @@ public class MMU extends IflMMU
     */
     public static void init()
     {
-        frameTable = new ArrayList<FrameTableEntry>(getFrameTableSize());
         FrameTableEntry newEntry;
-        for(int i = 0; i < frameTable.size(); i++)
+        for(int i = 0; i < getFrameTableSize(); i++)
         {
             newEntry = new FrameTableEntry(i);
             setFrame(i, newEntry);
-            frameTable.add(i, newEntry);
         }
         Daemon.create("Cleaner Daemon", new CleanerDaemon(), 4000);
     }
 
     /**
-       This method handlies memory references. The method must 
+       This method handles memory references. The method must 
        calculate, which memory page contains the memoryAddress,
        determine, whether the page is valid, start page fault 
        by making an interrupt if the page is invalid, finally, 
@@ -167,6 +164,49 @@ public class MMU extends IflMMU
        Feel free to add methods/fields to improve the readability of your code
     */
 
+    /** 
+     Return a free frame (frame not in use)
+      
+     @return a free frame, null if no free frame avaliable 
+     */
+    public synchronized static MyTuple<Integer, FrameTableEntry> getFreeFrame()
+    {
+        FrameTableEntry freeFrame = null;
+        Integer status = NotEnoughMemory;
+        /* iterate entire frame table */
+        for(int i = 0; i < getFrameTableSize(); i++)
+        {
+            /* check if frame is not reserved or locked */
+            if(!getFrame(i).isReserved() && getFrame(i).getLockCount() == 0)
+            {
+                status = SUCCESS;
+                /* Check if frame is free */
+                if(getFrame(i).getPage() == null)
+                {
+                    freeFrame = getFrame(i);
+                    break;
+                }
+            }
+        }
+        MyTuple<Integer, FrameTableEntry> retval = new Tuple(status, freeFrame);
+        return retval;
+    }
+    // public static boolean isOutOfMemory()
+    // {
+    //     boolean retval = true;
+    //     /* iterate entire frame table */
+    //     for(int i = 0; i < getFrameTableSize(); i++)
+    //     {
+    //         /* check if frame is not reserved or locked */
+    //         if(!getFrame(i).isReserved() && getFrame(i).getLockCount() == 0)
+    //         {
+    //             /* there exists an eligible frame */
+    //             retval = false;
+    //             break;
+    //         }
+    //     }
+    //     return retval;
+    // }
 }
 
 /*

@@ -86,6 +86,83 @@ public class PageFaultHandler extends IflPageFaultHandler
 					 int referenceType,
 					 PageTableEntry page)
     {
+        int retval;
+        SystemEvent pfEvent = new SystemEvent("pfEvent");
+        FrameTableEntry selectedFrame = null;
+        OpenFile swapFile;
+        thread.setValidatingThread(page);
+        /* Check if the page is valid */
+        if(page.isValid())
+            /* Page is valid */
+            retval = FAILURE;
+        else
+        {
+            /* Page invalid */
+            
+            /* Get an eligible frame */
+            MyTuple t = MMU.getFreeFrame();
+            
+            /* Check if memory is avaliable */
+            if(t.getX() == NotEnoughMemory)
+                /* ENOMEM */
+                retval = NotEnoughMemory;
+            else
+            {
+                /* Suspend thread with page fault event */
+                thread.suspend(pfEvent);
+
+                /* Get the free frame */
+                selectedFrame = t.getY();
+
+                /* Check if free frame was found */
+                if(selectedFrame)
+                {
+                    /* Free frame avaliable */
+
+                    /* Reserve the frame, preventing it from being taken away */
+                    selectedFrame.setReserved(thread.getTask());
+
+                    /* swap in operation */
+                    swapFile = thread.getTask().getSwapFile();
+                    swapFile.read(page.getID(), page, thread);
+
+                    /* Double check the thread status, make sure no SIGKILL */
+                    if(thread.getStatus() != ThreadCB.ThreadKill)
+                        retval = SUCCESS;
+                    else
+                        /* Thread was killed, fail */
+                        retval = FAILURE;    
+                }
+                else
+                {
+                    /* No free frame avaliable */
+
+                    /* Call chooser */
+                }
+            }
+        }
+
+        /* Perform Operations */
+        if(retval == SUCCESS)
+        {
+            selectedFrame.setPage(page);
+            page.setValid(true);
+            if(referenceType == MemoryWrite)
+                selectedFrame.setDirty(true);
+            selectedFrame.setUnreserved(thread.getTask());
+            pfEvent.notifyThreads();
+        }
+        else if(retval == FAILURE)
+        {
+            page.setFrame(null);
+        }
+
+        /* end */
+        page.setValidatingThread(null);
+        page.notifyThreads();
+        ThreadCB.dispatch();
+        return retval;
+        //TODO
         // your code goes here
         //given thread and page that casued pagefault
         //reference is read, write, or lock
@@ -94,7 +171,7 @@ public class PageFaultHandler extends IflPageFaultHandler
         //its possible that all frames are locked or reserved
         //return ENOMEM if this is so
         //
-        //do function
+        //do M2H2
         //
         //finally check this
         // its possible that the thread could be SiGKILLED, return Failure if so
