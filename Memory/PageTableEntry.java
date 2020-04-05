@@ -58,9 +58,70 @@ public class PageTableEntry extends IflPageTableEntry
      */
     public int do_lock(IORB iorb)
     {
-        // your code goes here
-        //increment the lock count of the frame <= associated by this page
-        //page might be invalid
+        int retval, pagefault_retval;
+        /* Check Page Validity */
+        if(isValid())
+            /* Page valid */
+            retval = SUCCESS;
+        else
+        {
+            /* Page invalid */
+            
+            /* Check for a Page Fault */
+            if(this.getValidatingThread())
+            {
+                /* Page fault exists */
+
+                /* This thread was the to initate an already existing Page Fault */
+                if(this.getValidatingThread() == iorb.getThread())
+                    retval = SUCCESS;
+                else
+                {
+                    /* A different thread initiated a Pagefault */
+                    
+                    /* Suspend this and wait */
+                    iorb.getThread().suspend(this);
+
+                    /* Page fault was Successful */
+                    if(isValid())
+                    {
+                        /* Double check the thread status, make sure no SIGKILL */
+                        if(iorb.getThread().getStatus() != ThreadCB.ThreadKill)
+                            retval = SUCCESS;
+                        else
+                            /* Thread was killed, fail */
+                            retval = FAILURE;
+                    }
+                    else
+                        /* Page Fault failed */
+                        retval = FAILURE;
+                }
+            }
+            else
+            {
+                /* Page fault does not exist */
+                /* Directly handle pagefault (already in kernel mode) */
+                pagefault_retval = PageFaultHandler.handlePageFault(iorb.getThread(), MemoryLock, this);
+                if (pagefault_retval == SUCCESS && isValid())
+                {  
+                    /* Double check the thread status, make sure no SIGKILL */
+                    if(iorb.getThread().getStatus() != ThreadCB.ThreadKill)
+                        retval = SUCCESS;
+                    else
+                        /* Thread was killed, fail */
+                        retval = FAILURE;                
+                }
+                else
+                    retval = FAILURE;
+            }
+        }
+        /* a successful lock */
+        if(retval == SUCCESS)
+        {
+            this.getFrame().incrementLockCount();
+            this.getFrame().incrementUseCount();
+        }
+        return retval;
         //method must first checl if the page is in memory(test validity bit)
         //if invalid, => PAGE FAULT (static method handlePageFault) does it directly, no INT needed(already in kernel mode)
         //consider these edge cases
@@ -73,7 +134,6 @@ public class PageTableEntry extends IflPageTableEntry
         //else, then wait until P becomes valid by suspend() --> th2 and pass page P
         //when it does become valid(or fault fails), 
         //be sure to increment lock count on frame as well
-
     }
 
     /** This method decreases the lock count on the page by one. 
@@ -84,10 +144,8 @@ public class PageTableEntry extends IflPageTableEntry
     */
     public void do_unlock()
     {
-        // your code goes here
-        // decrement the lock couint decrementLockCount()
-        //make sure its not <0 WHICH WOULD BE AN ISSUE
-
+        if(this.getFrame().getLockCount() > 0)
+            this.getFrame().decrementLockCount();
     }
 
 

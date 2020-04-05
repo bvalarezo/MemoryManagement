@@ -36,13 +36,17 @@ public class PageTable extends IflPageTable
     public PageTable(TaskCB ownerTask)
     {
         super(ownerTask);
+        int i, maxPages = (int) Math.pow(2, MMU.getPageAddressBits());
+        setPageTable(new PageTableEntry[maxPages]);
+        for(i = 0; i < maxPages; i++)
+        {
+            getPageTable()[i] = new PageTableEntry(this, i);
+        }
         // your code goes here
         // SIZE = MMU.getPageAddressBits shift it and stuff lol
         // init an array of size SIZE
         // each page must be ninit with a suitable PageTableEntry Obj
         // use PageIDs
-
-
     }
 
     /**
@@ -67,6 +71,15 @@ public class PageTable extends IflPageTable
        Feel free to add methods/fields to improve the readability of your code
     */
 
+    public void setPageTable(PageTableEntry[] pageTable)
+    {
+        pages = pageTable;
+    }
+
+    public PageTableEntry[] getPageTable()
+    {
+        return pages;
+    }
 }
 
 /*

@@ -1,16 +1,3 @@
-package osp.Memory;
-
-/**
-    The FrameTableEntry class contains information about a specific page
-    frame of memory.
-
-    @OSPProject Memory
-*/
-import osp.Tasks.*;
-import osp.Interrupts.*;
-import osp.Utilities.*;
-import osp.IFLModules.IflFrameTableEntry;
-
 /**
  * Name: Bryan Valarezo
  * StudentID: 110362410
@@ -21,8 +8,21 @@ import osp.IFLModules.IflFrameTableEntry;
  * I understand that breaking this pledge will result in an “F” for the entire course.
  */
 
+package osp.Memory;
+import osp.Tasks.*;
+import osp.Interrupts.*;
+import osp.Utilities.*;
+import osp.IFLModules.IflFrameTableEntry;
+
+/**
+    The FrameTableEntry class contains information about a specific page
+    frame of memory.
+
+    @OSPProject Memory
+*/
 public class FrameTableEntry extends IflFrameTableEntry
 {
+    private int useCount;
     /**
        The frame constructor. Must have
 
@@ -38,12 +38,30 @@ public class FrameTableEntry extends IflFrameTableEntry
         // implementation defines additional fields in this class
         super(frameID);
         //other inits?
+        useCount = 0;
     }
 
 
     /*
        Feel free to add methods/fields to improve the readability of your code
     */
+    public void incrementUseCount(){
+        if(this.useCount < 2)
+            this.useCount++;
+    }
+
+    public void decrementUseCount(){
+        if(this.useCount > 0)
+            this.useCount--;
+    }
+
+    public int getUseCount() {
+        return useCount;
+    }
+
+    public void setUseCount(int useCount) {
+        this.useCount = useCount;
+    }
 
 }
 

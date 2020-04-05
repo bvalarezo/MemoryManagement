@@ -17,6 +17,7 @@ import osp.Interrupts.*;
 */
 public class MMU extends IflMMU
 {
+    public static ArrayList<FrameTableEntry> frameTable;
     /** 
         This method is called once before the simulation starts. 
 	Can be used to initialize the frame table and other static variables.
@@ -25,10 +26,15 @@ public class MMU extends IflMMU
     */
     public static void init()
     {
-        // your code goes here
-        //inti Frame Table in a for loop
-        //Each entry needs to be an Obj, not null
-
+        frameTable = new ArrayList<FrameTableEntry>(getFrameTableSize());
+        FrameTableEntry newEntry;
+        for(int i = 0; i < frameTable.size(); i++)
+        {
+            newEntry = new FrameTableEntry(i);
+            setFrame(i, newEntry);
+            frameTable.add(i, newEntry);
+        }
+        Daemon.create("Cleaner Daemon", new CleanerDaemon(), 4000);
     }
 
     /**
@@ -53,21 +59,72 @@ public class MMU extends IflMMU
     static public PageTableEntry do_refer(int memoryAddress,
 					  int referenceType, ThreadCB thread)
     {
-        // your code goes here
-        //see Page 101
-        //determine the page of the thread's logical memory
-        //use getVirtualAddressBits() and getPageAddressBits()
-        //we can compute page  size and offset
-        //more importantly the page the addr belongs to
-        //get page
-        //Check if the page is valid
-        //If valid, then set the referenced the the dirty bits and quit
+        int offsetBits, pageSize, pageNumber;
+        boolean refer = false;
+        /* Calculate the page number based on the memoryAddress(VirtualAddress) */
+        offsetBits = getVirtualAddressBits() - getPageAddressBits();
+        pageSize = (int) Math.pow(2, offsetBits);
+        pageNumber = memoryAddress/pageSize;
+
+        /* Get the page from the page table */
+        PageTableEntry P = thread.getTask().getPageTable().getPageTable()[pageNumber];
+
+        /* Check page validity */
+        if(P.isValid())
+        {
+            /* Page Valid */
+            refer = true;
+        }
+        else
+        {
+            /* Page Invalid */
+
+            /* Check for page fault */
+            if(P.getValidatingThread())
+            {
+                /* Page fault exists */
+                
+                /* Suspend the thread */
+                thread.suspend(P);
+
+                /* Double check the thread status, make sure no SIGKILL */
+                if(thread.getStatus() != ThreadCB.ThreadKill && P.isValid())
+                    refer = true;
+            }
+            else
+            {
+                /* Page fault does not exist */
+
+                /* Setup a page fault interrupt */
+                InterruptVector.setPage(P);
+                InterruptVector.setReferenceTpye(referenceType);
+                InterruptVector.setThread(thread);
+
+                /* Call interrupt */
+                CPU.interrrupt(PageFault);
+
+                /* Double check the thread status, make sure no SIGKILL */
+                if(thread.getStatus() != ThreadCB.ThreadKill && P.isValid())
+                    refer = true;
+            }
+
+        }
+        /* Perform reference */
+        if(refer)
+        {
+            P.getFrame().setReferenced(true);
+            P.getFrame().incrementUseCount();
+            if(referenceType == MemoryWrite)
+                P.getFrame().setDirty(true);
+        }
+        return P;
+        //If valid, then set the referenced the dirty bits and quit
         //else, then
         //1. Some other thread of the same task has already caused the pagefault and we are waiting
         //2. No other thread caused a page fault(FRESH)
         //use getValidatingThread()
         //if 1. Suspend() thread
-        //make sure Thread is now ThreadKill with getStatus()
+        //make sure Thread is not ThreadKill with getStatus()
         //if 2. cause a PageFault
         //InterruptVector Class construct with setPage(), setReferenceTpye(), setThread()
         //call interrupt() of type PageFault
@@ -115,3 +172,10 @@ public class MMU extends IflMMU
 /*
       Feel free to add local classes to improve the readability of your code
 */
+class CleanerDaemon implements DaemonInterface
+{
+    public void unleash(ThreadCB thread)
+    {
+        //TODO
+    }
+}
