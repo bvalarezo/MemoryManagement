@@ -68,12 +68,12 @@ public class PageTableEntry extends IflPageTableEntry
             /* Page invalid */
             
             /* Check for a Page Fault */
-            if(this.getValidatingThread())
+            if(getValidatingThread() != null)
             {
                 /* Page fault exists */
 
                 /* This thread was the to initate an already existing Page Fault */
-                if(this.getValidatingThread() == iorb.getThread())
+                if(getValidatingThread() == iorb.getThread())
                     retval = SUCCESS;
                 else
                 {

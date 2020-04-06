@@ -9,7 +9,6 @@ package osp.Memory;
 import java.lang.Math;
 import osp.Tasks.*;
 import osp.Utilities.*;
-import sun.security.krb5.internal.crypto.crc32;
 import osp.IFLModules.*;
 import osp.Hardware.*;
 
@@ -57,7 +56,7 @@ public class PageTable extends IflPageTable
         for(int i =0; i < getPageTable().length; i++)
         {
             currentFrame = getPageTable()[i].getFrame();
-            if(currentFrame)
+            if(currentFrame != null)
             {
                 /* Free the frame */
                 currentFrame.setPage(null);

@@ -7,7 +7,7 @@ import osp.Tasks.*;
 import osp.Utilities.*;
 import osp.Hardware.*;
 import osp.Interrupts.*;
-
+import osp.FileSys.OpenFile;
 /**
     The MMU class contains the student code that performs the work of
     handling a memory reference.  It is responsible for calling the
@@ -77,7 +77,7 @@ public class MMU extends IflMMU
             /* Page Invalid */
 
             /* Check for page fault */
-            if(P.getValidatingThread())
+            if(P.getValidatingThread() != null)
             {
                 /* Page fault exists */
                 
@@ -98,7 +98,7 @@ public class MMU extends IflMMU
                 InterruptVector.setThread(thread);
 
                 /* Call interrupt */
-                CPU.interrrupt(PageFault);
+                CPU.interrupt(PageFault);
 
                 /* Double check the thread status, make sure no SIGKILL */
                 if(thread.getStatus() != ThreadCB.ThreadKill && P.isValid())
@@ -153,10 +153,10 @@ public class MMU extends IflMMU
       
      @return a free frame, null if no free frame avaliable 
      */
-    public synchronized static MyTuple<Integer, FrameTableEntry> getFreeFrame()
+    public synchronized static MyTuple getFreeFrame()
     {
         FrameTableEntry freeFrame = null;
-        Integer status = NotEnoughMemory;
+        int status = NotEnoughMemory;
         /* iterate entire frame table */
         for(int i = 0; i < getFrameTableSize(); i++)
         {
@@ -172,7 +172,7 @@ public class MMU extends IflMMU
                 }
             }
         }
-        MyTuple<Integer, FrameTableEntry> retval = new Tuple(status, freeFrame);
+        MyTuple retval = new MyTuple(status, freeFrame);
         return retval;
     }
 
@@ -195,7 +195,7 @@ public class MMU extends IflMMU
                     }
                 }  
             }
-            if(choosenFrame)
+            if(choosenFrame != null)
             {
                 break;
             }

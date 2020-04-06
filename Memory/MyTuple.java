@@ -3,24 +3,23 @@ package osp.Memory;
 /**
  * My Custom Tuple Class
  * 
- * @param <X>
- * @param <Y>
  */
-public class MyTuple<X, Y> { 
-    public final X x = null; 
-    public final Y y = null;
+public class MyTuple { 
+    public final int status; 
+    public final FrameTableEntry freeFrame;
 
-    public Tuple(X x, Y y) { 
-      this.x = x; 
-      this.y = y; 
+    public MyTuple(int status, FrameTableEntry freeFrame) { 
+      this.status = status;
+      this.freeFrame = freeFrame;
+
     }
     
-    public X getX()
+    public int getStatus()
     {
-      return x;
+      return status;
     }
 
-    public Y getY() {
-      return y;
+    public FrameTableEntry getFreeFrame() {
+      return freeFrame;
     }
   } 

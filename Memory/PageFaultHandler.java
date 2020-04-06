@@ -104,7 +104,7 @@ public class PageFaultHandler extends IflPageFaultHandler
             MyTuple t = MMU.getFreeFrame();
             
             /* Check if memory is avaliable */
-            if(t.getX() == NotEnoughMemory)
+            if(t.getStatus() == NotEnoughMemory)
                 /* ENOMEM */
                 retval = NotEnoughMemory;
             else
@@ -113,10 +113,10 @@ public class PageFaultHandler extends IflPageFaultHandler
                 thread.suspend(pfEvent);
 
                 /* Get the free frame */
-                selectedFrame = t.getY();
+                selectedFrame = t.getFreeFrame();
 
                 /* Check if free frame was found */
-                if(selectedFrame)
+                if(selectedFrame != null)
                 {
                     /* Free frame avaliable */
 
