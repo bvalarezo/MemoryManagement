@@ -9,6 +9,7 @@ package osp.Memory;
 import java.lang.Math;
 import osp.Tasks.*;
 import osp.Utilities.*;
+import sun.security.krb5.internal.crypto.crc32;
 import osp.IFLModules.*;
 import osp.Hardware.*;
 
@@ -52,7 +53,27 @@ public class PageTable extends IflPageTable
     */
     public void do_deallocateMemory()
     {
-        //TODO
+        FrameTableEntry currentFrame;
+        for(int i =0; i < getPageTable().length; i++)
+        {
+            currentFrame = getPageTable()[i].getFrame();
+            if(currentFrame)
+            {
+                /* Free the frame */
+                currentFrame.setPage(null);
+                currentFrame.setDirty(false);
+                currentFrame.setReferenced(false);
+
+                /* Set the page invalid */
+                getPageTable()[i].setValid(false);
+
+                /* If the current frame was reserved by this task, unreserve it */
+                if(currentFrame.getReserved() == getTask())
+                {
+                    currentFrame.setUnreserved(getTask());
+                }
+            }
+        }
         // your code goes here
         // unset the various flags (setPage() to null it ) of the Frame
         //for i in pgaetable
