@@ -89,8 +89,9 @@ public class PageFaultHandler extends IflPageFaultHandler
         int retval;
         SystemEvent pfEvent = new SystemEvent("pfEvent");
         FrameTableEntry selectedFrame = null;
-        OpenFile swapFile;
-        thread.setValidatingThread(page);
+        PageTableEntry oldPage = null;
+        OpenFile swapFile = null;
+        page.setValidatingThread(thread);
         /* Check if the page is valid */
         if(page.isValid())
             /* Page is valid */
@@ -125,26 +126,77 @@ public class PageFaultHandler extends IflPageFaultHandler
                     /* swap in operation */
                     swapFile = thread.getTask().getSwapFile();
                     swapFile.read(page.getID(), page, thread);
-
-                    /* Double check the thread status, make sure no SIGKILL */
-                    if(thread.getStatus() != ThreadCB.ThreadKill)
-                        retval = SUCCESS;
-                    else
-                        /* Thread was killed, fail */
-                        retval = FAILURE;    
                 }
                 else
                 {
                     /* No free frame avaliable */
 
-                    /* Call chooser */
+                    /* Call chooser to get a frame to free*/
+                    selectedFrame = MMU.chooser();
+                    /* Reserve the frame, preventing it from being taken away */
+                    selectedFrame.setReserved(thread.getTask());
+
+                    /* Get the old page to swap */
+                    oldPage = selectedFrame.getPage();
+
+                    /* Check the dirty bit */
+                    if(selectedFrame.isDirty())
+                    {
+                        /* Frame is dirty */
+
+                        /* swap out operation */
+                        swapFile = oldPage.getTask().getSwapFile();
+                        swapFile.write(oldPage.getID(), oldPage, thread);
+                        
+                        /* Perform SIGKILL check */
+                        if(thread.getStatus() == ThreadCB.ThreadKill)
+                        {
+                            retval = FAILURE;
+                        }
+                        else
+                        {
+                            /* Free the frame */
+                            selectedFrame.setPage(null);
+                            selectedFrame.setDirty(false);
+                            selectedFrame.setReferenced(false);
+                            oldPage.setValid(false);
+                            oldPage.setFrame(null);
+
+                            /* swap in operation */
+                            swapFile = thread.getTask().getSwapFile();
+                            swapFile.read(page.getID(), page, thread);
+                        }
+                    }
+                    else
+                    {
+                        /* Frame is clean */
+
+                        /* Free the frame */
+                        selectedFrame.setPage(null);
+                        selectedFrame.setDirty(false);
+                        selectedFrame.setReferenced(false);
+                        oldPage.setValid(false);
+                        oldPage.setFrame(null);
+
+                        /* swap in operation */
+                        swapFile = thread.getTask().getSwapFile();
+                        swapFile.read(page.getID(), page, thread);
+                    }
                 }
+                /* Double check the thread status, make sure no SIGKILL */
+                if(thread.getStatus() != ThreadCB.ThreadKill)
+                    retval = SUCCESS;
+                else
+                    /* Thread was killed, fail */
+                    retval = FAILURE;
             }
         }
 
         /* Perform Operations */
         if(retval == SUCCESS)
         {
+            /* assign new page to frame */
+            page.setFrame(selectedFrame);
             selectedFrame.setPage(page);
             page.setValid(true);
             if(referenceType == MemoryWrite)
@@ -152,36 +204,12 @@ public class PageFaultHandler extends IflPageFaultHandler
             selectedFrame.setUnreserved(thread.getTask());
             pfEvent.notifyThreads();
         }
-        else if(retval == FAILURE)
-        {
-            page.setFrame(null);
-        }
-
         /* end */
-        page.setValidatingThread(null);
         page.notifyThreads();
+        page.setValidatingThread(null);
         ThreadCB.dispatch();
         return retval;
-        //TODO
-        // your code goes here
-        //given thread and page that casued pagefault
-        //reference is read, write, or lock
-        //set dirty on write, not read or lock
-        //check if page is valid, if so than return Failure because thats a waste of time
-        //its possible that all frames are locked or reserved
-        //return ENOMEM if this is so
-        //
-        //do M2H2
-        //
-        //finally check this
-        // its possible that the thread could be SiGKILLED, return Failure if so
-        //else, cool
-        //notifyThreads() that are waiting on the page
-        //dispatch()
-        //return SUCCESS
-        //see page 105-107
     }
-
 
     /*
        Feel free to add methods/fields to improve the readability of your code

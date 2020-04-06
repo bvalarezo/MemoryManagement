@@ -94,7 +94,7 @@ public class MMU extends IflMMU
 
                 /* Setup a page fault interrupt */
                 InterruptVector.setPage(P);
-                InterruptVector.setReferenceTpye(referenceType);
+                InterruptVector.setReferenceType(referenceType);
                 InterruptVector.setThread(thread);
 
                 /* Call interrupt */
@@ -115,22 +115,6 @@ public class MMU extends IflMMU
                 P.getFrame().setDirty(true);
         }
         return P;
-        //If valid, then set the referenced the dirty bits and quit
-        //else, then
-        //1. Some other thread of the same task has already caused the pagefault and we are waiting
-        //2. No other thread caused a page fault(FRESH)
-        //use getValidatingThread()
-        //if 1. Suspend() thread
-        //make sure Thread is not ThreadKill with getStatus()
-        //if 2. cause a PageFault
-        //InterruptVector Class construct with setPage(), setReferenceTpye(), setThread()
-        //call interrupt() of type PageFault
-        //After interrrupt(), PAGE WILL BE IN Main Mem.
-        //thread will be in readyQ
-        //before exit, set the reference and dirty bits
-        //Keep in mind of SIGKILL 
-        //return the referenced page
-
     }
 
     /** Called by OSP after printing an error message. The student can
@@ -191,22 +175,46 @@ public class MMU extends IflMMU
         MyTuple<Integer, FrameTableEntry> retval = new Tuple(status, freeFrame);
         return retval;
     }
-    // public static boolean isOutOfMemory()
-    // {
-    //     boolean retval = true;
-    //     /* iterate entire frame table */
-    //     for(int i = 0; i < getFrameTableSize(); i++)
-    //     {
-    //         /* check if frame is not reserved or locked */
-    //         if(!getFrame(i).isReserved() && getFrame(i).getLockCount() == 0)
-    //         {
-    //             /* there exists an eligible frame */
-    //             retval = false;
-    //             break;
-    //         }
-    //     }
-    //     return retval;
-    // }
+
+    public synchronized static FrameTableEntry chooser()
+    {
+        int targetUseCount = 0;
+        boolean dirtySwitch = false;
+        FrameTableEntry choosenFrame = null;
+        while(choosenFrame == null)
+        {
+            for(int i = 0; i < getFrameTableSize(); i++)
+            {
+                /* check if frame is not reserved or locked */
+                if(!getFrame(i).isReserved() && getFrame(i).getLockCount() == 0)
+                {
+                    if(getFrame(i).getUseCount() == targetUseCount && getFrame(i).isDirty() == dirtySwitch)
+                    {
+                        choosenFrame = getFrame(i);
+                        break;
+                    }
+                }  
+            }
+            if(choosenFrame)
+            {
+                break;
+            }
+            else
+            {
+                if(!dirtySwitch)
+                {
+                    dirtySwitch = true;
+                }
+                else
+                {
+                    dirtySwitch = false;
+                    targetUseCount = targetUseCount < 2 ? (targetUseCount + 1): (targetUseCount);
+                }
+            }
+        }
+        return choosenFrame;
+    }
+
 }
 
 /*
@@ -216,6 +224,38 @@ class CleanerDaemon implements DaemonInterface
 {
     public void unleash(ThreadCB thread)
     {
-        //TODO
+        int retval;
+        PageTableEntry oldPage = null;
+        OpenFile swapFile = null;
+
+         /* iterate entire frame table */
+         for(int i = 0; i < MMU.getFrameTableSize(); i++)
+         {
+             /* check if frame is not reserved, locked, or already free */
+             if(!MMU.getFrame(i).isReserved() && MMU.getFrame(i).getLockCount() == 0 && MMU.getFrame(i).getPage() != null)
+             {
+                 if(MMU.getFrame(i).getUseCount() == 0)
+                 {
+                    /* Get the old page to swap */
+                    oldPage = MMU.getFrame(i).getPage();
+                    
+                    /* Swap out operation */
+                    swapFile = oldPage.getTask().getSwapFile();
+                    swapFile.write(oldPage.getID(), oldPage, thread);
+
+                    /* Free the frame */
+                    MMU.getFrame(i).setPage(null);
+                    MMU.getFrame(i).setDirty(false);
+                    MMU.getFrame(i).setReferenced(false);
+                    oldPage.setValid(false);
+                    oldPage.setFrame(null);
+                 }
+                 else
+                 {
+                     /* Decrement use count */
+                     MMU.getFrame(i).decrementUseCount();
+                 }
+             }
+         }
     }
 }

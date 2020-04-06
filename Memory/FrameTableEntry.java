@@ -34,10 +34,7 @@ public class FrameTableEntry extends IflFrameTableEntry
     */
     public FrameTableEntry(int frameID)
     {
-        // Calls super(frameID) and might perform other inits if the student
-        // implementation defines additional fields in this class
         super(frameID);
-        //other inits?
         useCount = 0;
     }
 

@@ -42,11 +42,6 @@ public class PageTable extends IflPageTable
         {
             getPageTable()[i] = new PageTableEntry(this, i);
         }
-        // your code goes here
-        // SIZE = MMU.getPageAddressBits shift it and stuff lol
-        // init an array of size SIZE
-        // each page must be ninit with a suitable PageTableEntry Obj
-        // use PageIDs
     }
 
     /**

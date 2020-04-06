@@ -119,21 +119,9 @@ public class PageTableEntry extends IflPageTableEntry
         if(retval == SUCCESS)
         {
             this.getFrame().incrementLockCount();
-            this.getFrame().incrementUseCount();
+            // this.getFrame().incrementUseCount();
         }
         return retval;
-        //method must first checl if the page is in memory(test validity bit)
-        //if invalid, => PAGE FAULT (static method handlePageFault) does it directly, no INT needed(already in kernel mode)
-        //consider these edge cases
-        // thread Th1 of taskt T makes a reference to page P either via refer() or locking
-        //if page is invalid, PAGEFAULT
-        //Suppose th2 of T wants to lock the same page P.
-        //Pagefault again?...no we can do better(see page 96)
-        //we can get the thread who caused the pagefault getValidatingThread()
-        //if Th2 == Th1, then return after inc the lockcount
-        //else, then wait until P becomes valid by suspend() --> th2 and pass page P
-        //when it does become valid(or fault fails), 
-        //be sure to increment lock count on frame as well
     }
 
     /** This method decreases the lock count on the page by one. 
