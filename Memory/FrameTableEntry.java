@@ -35,6 +35,7 @@ public class FrameTableEntry extends IflFrameTableEntry
     public FrameTableEntry(int frameID)
     {
         super(frameID);
+        MyOut.print(this, "Entering Student Method... constructor FrameTableEntry()");
         useCount = 0;
     }
 

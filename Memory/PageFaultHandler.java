@@ -86,6 +86,8 @@ public class PageFaultHandler extends IflPageFaultHandler
 					 int referenceType,
 					 PageTableEntry page)
     {
+        MyOut.print("osp.Memory.PageFaultHandler", "Entering Student Method..." + new Object() {
+        }.getClass().getEnclosingMethod().getName());
         int retval;
         SystemEvent pfEvent = new SystemEvent("pfEvent");
         FrameTableEntry selectedFrame = null;
@@ -94,8 +96,10 @@ public class PageFaultHandler extends IflPageFaultHandler
         page.setValidatingThread(thread);
         /* Check if the page is valid */
         if(page.isValid())
+        {
             /* Page is valid */
             retval = FAILURE;
+        }
         else
         {
             /* Page invalid */
@@ -122,6 +126,9 @@ public class PageFaultHandler extends IflPageFaultHandler
 
                     /* Reserve the frame, preventing it from being taken away */
                     selectedFrame.setReserved(thread.getTask());
+                    
+                    /* assign frame to page */
+                    page.setFrame(selectedFrame);
 
                     /* swap in operation */
                     swapFile = thread.getTask().getSwapFile();
@@ -162,6 +169,9 @@ public class PageFaultHandler extends IflPageFaultHandler
                             oldPage.setValid(false);
                             oldPage.setFrame(null);
 
+                            /* assign frame to page */
+                            page.setFrame(selectedFrame);
+
                             /* swap in operation */
                             swapFile = thread.getTask().getSwapFile();
                             swapFile.read(page.getID(), page, thread);
@@ -178,6 +188,9 @@ public class PageFaultHandler extends IflPageFaultHandler
                         oldPage.setValid(false);
                         oldPage.setFrame(null);
 
+                        /* assign frame to page */
+                        page.setFrame(selectedFrame);
+
                         /* swap in operation */
                         swapFile = thread.getTask().getSwapFile();
                         swapFile.read(page.getID(), page, thread);
@@ -187,8 +200,11 @@ public class PageFaultHandler extends IflPageFaultHandler
                 if(thread.getStatus() != ThreadCB.ThreadKill)
                     retval = SUCCESS;
                 else
-                    /* Thread was killed, fail */
+                {
+                    /* Thread was killed, unset frame to page */
+                    page.setFrame(null);
                     retval = FAILURE;
+                }
             }
         }
 
@@ -196,7 +212,6 @@ public class PageFaultHandler extends IflPageFaultHandler
         if(retval == SUCCESS)
         {
             /* assign new page to frame */
-            page.setFrame(selectedFrame);
             selectedFrame.setPage(page);
             page.setValid(true);
             if(referenceType == MemoryWrite)
@@ -208,6 +223,8 @@ public class PageFaultHandler extends IflPageFaultHandler
         page.notifyThreads();
         page.setValidatingThread(null);
         ThreadCB.dispatch();
+        MyOut.print("osp.Memory.PageFaultHandler", "Leaving Student Method..." + new Object() {
+        }.getClass().getEnclosingMethod().getName());
         return retval;
     }
 

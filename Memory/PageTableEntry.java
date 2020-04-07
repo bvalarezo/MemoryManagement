@@ -58,11 +58,14 @@ public class PageTableEntry extends IflPageTableEntry
      */
     public int do_lock(IORB iorb)
     {
+        MyOut.print(this,"Entering Student Method..." + new Object() {
+        }.getClass().getEnclosingMethod().getName());
         int retval, pagefault_retval;
         /* Check Page Validity */
-        if(isValid())
+        if(isValid()){
             /* Page valid */
             retval = SUCCESS;
+        }
         else
         {
             /* Page invalid */
@@ -118,7 +121,7 @@ public class PageTableEntry extends IflPageTableEntry
         /* a successful lock */
         if(retval == SUCCESS)
         {
-            this.getFrame().incrementLockCount();
+            getFrame().incrementLockCount();
             // this.getFrame().incrementUseCount();
         }
         return retval;
@@ -132,6 +135,8 @@ public class PageTableEntry extends IflPageTableEntry
     */
     public void do_unlock()
     {
+        MyOut.print(this,"Entering Student Method..." + new Object() {
+        }.getClass().getEnclosingMethod().getName());
         if(this.getFrame().getLockCount() > 0)
             this.getFrame().decrementLockCount();
     }

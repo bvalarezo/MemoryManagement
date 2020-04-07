@@ -36,6 +36,7 @@ public class PageTable extends IflPageTable
     public PageTable(TaskCB ownerTask)
     {
         super(ownerTask);
+        MyOut.print(this,"Entering Student Method... constructor PageTable()");
         int i, maxPages = (int) Math.pow(2, MMU.getPageAddressBits());
         setPageTable(new PageTableEntry[maxPages]);
         for(i = 0; i < maxPages; i++)
@@ -52,6 +53,8 @@ public class PageTable extends IflPageTable
     */
     public void do_deallocateMemory()
     {
+        MyOut.print(this, "Entering Student Method..." + new Object() {
+        }.getClass().getEnclosingMethod().getName());
         FrameTableEntry currentFrame;
         for(int i =0; i < getPageTable().length; i++)
         {
@@ -89,12 +92,12 @@ public class PageTable extends IflPageTable
 
     public void setPageTable(PageTableEntry[] pageTable)
     {
-        pages = pageTable;
+        this.pages = pageTable;
     }
 
     public PageTableEntry[] getPageTable()
     {
-        return pages;
+        return this.pages;
     }
 }
 
