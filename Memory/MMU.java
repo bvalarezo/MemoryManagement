@@ -149,39 +149,45 @@ public class MMU extends IflMMU
        Feel free to add methods/fields to improve the readability of your code
     */
 
-    /** 
-     Return a free frame (frame not in use)
+    // /** 
+    //  Return a free frame (frame not in use)
       
-     @return a free frame, null if no free frame avaliable 
-     */
-    public synchronized static MyTuple getFreeFrame()
-    {
-        FrameTableEntry freeFrame = null;
-        int status = NotEnoughMemory;
-        /* iterate entire frame table */
-        for(int i = 0; i < getFrameTableSize(); i++)
-        {
-            /* check if frame is not reserved or locked */
-            if(!getFrame(i).isReserved() && getFrame(i).getLockCount() == 0)
-            {
-                status = SUCCESS;
-                /* Check if frame is free */
-                if(getFrame(i).getPage() == null)
-                {
-                    freeFrame = getFrame(i);
-                    break;
-                }
-            }
-        }
-        MyTuple retval = new MyTuple(status, freeFrame);
-        return retval;
-    }
+    //  @return a free frame, null if no free frame avaliable 
+    //  */
+    // public synchronized static MyTuple getFreeFrame()
+    // {
+    //     FrameTableEntry freeFrame = null;
+    //     int status = NotEnoughMemory;
+    //     /* iterate entire frame table */
+    //     for(int i = 0; i < getFrameTableSize(); i++)
+    //     {
+    //         /* check if frame is not reserved or locked */
+    //         if(!getFrame(i).isReserved() && getFrame(i).getLockCount() == 0)
+    //         {
+    //             status = SUCCESS;
+    //             /* Check if frame is free */
+    //             if(getFrame(i).getPage() == null)
+    //             {
+    //                 freeFrame = getFrame(i);
+    //                 break;
+    //             }
+    //         }
+    //     }
+    //     MyTuple retval = new MyTuple(status, freeFrame);
+    //     return retval;
+    // }
 
+    /**
+     * In order to optimize things, this method will try to get a free frame
+     * Else, it will invoke the chooserHand and pick an appropirate frame
+     * 
+     * @return A Frame, null if ENOMEM
+     */
     public synchronized static FrameTableEntry chooser()
     {
-        int targetUseCount = 0;
+        int targetUseCount = 0, status = NotEnoughMemory;
         boolean dirtySwitch = false;
-        FrameTableEntry choosenFrame = null;
+        FrameTableEntry choosenFrame = null, freeFrame = null;
         while(choosenFrame == null)
         {
             for(int i = 0; i < getFrameTableSize(); i++)
@@ -189,27 +195,47 @@ public class MMU extends IflMMU
                 /* check if frame is not reserved or locked */
                 if(!getFrame(i).isReserved() && getFrame(i).getLockCount() == 0)
                 {
-                    if(getFrame(i).getUseCount() == targetUseCount && getFrame(i).isDirty() == dirtySwitch)
+                    status = SUCCESS; //at least some frame can be replaced
+                    /* Check if frame is free */
+                    if(getFrame(i).getPage() == null)
+                    {
+                        freeFrame = getFrame(i);
+                        break;
+                    }
+                    else if(getFrame(i).getUseCount() == targetUseCount && getFrame(i).isDirty() == dirtySwitch)
                     {
                         choosenFrame = getFrame(i);
                         break;
                     }
                 }  
             }
-            if(choosenFrame != null)
+            /* After the first sweep, if all of the frames were reserved or locked */
+            if(status == NotEnoughMemory)
             {
-                break;
+                return null;
+            }
+            else if(freeFrame != null)
+            {
+                return freeFrame;
             }
             else
             {
-                if(!dirtySwitch)
+                if(choosenFrame != null)
                 {
-                    dirtySwitch = true;
+                    break;
                 }
                 else
                 {
-                    dirtySwitch = false;
-                    targetUseCount = targetUseCount < 2 ? (targetUseCount + 1): (targetUseCount);
+                    /* increase the tolerance for the M2HC */
+                    if(!dirtySwitch)
+                    {
+                        dirtySwitch = true;
+                    }
+                    else
+                    {
+                        dirtySwitch = false;
+                        targetUseCount = targetUseCount < 2 ? (targetUseCount + 1): (targetUseCount);
+                    }
                 }
             }
         }

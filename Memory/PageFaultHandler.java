@@ -102,30 +102,32 @@ public class PageFaultHandler extends IflPageFaultHandler
             /* Page invalid */
             
             /* Get an eligible frame */
-            MyTuple t = MMU.getFreeFrame();
+            selectedFrame = MMU.chooser();
             
             /* Check if memory is avaliable */
-            if(t.getStatus() == NotEnoughMemory)
+            if(selectedFrame == null)
+            {
                 /* ENOMEM */
+                ThreadCB.dispatch();
                 return NotEnoughMemory;
+            }
             else
             {
-                /* Begin the page fault */
-                page.setValidatingThread(thread);
-
                 /* Suspend thread with page fault event */
                 thread.suspend(pfEvent);
 
-                /* Get the free frame */
-                selectedFrame = t.getFreeFrame();
+                /* Begin the page fault */
+                page.setValidatingThread(thread);
 
-                /* Check if free frame was found */
-                if(selectedFrame != null)
+                /* Reserve the frame, preventing it from being taken away */
+                selectedFrame.setReserved(thread.getTask());
+
+                /* Get the old page to swap (could be NULL if frame was free) */
+                oldPage = selectedFrame.getPage();
+                /* Check if frame was free */
+                if(oldPage == null)
                 {
-                    /* Free frame avaliable */
-
-                    /* Reserve the frame, preventing it from being taken away */
-                    selectedFrame.setReserved(thread.getTask());
+                    /* Free frame  */
                     
                     /* assign frame to page */
                     page.setFrame(selectedFrame);
@@ -136,18 +138,29 @@ public class PageFaultHandler extends IflPageFaultHandler
                 }
                 else
                 {
-                    /* No free frame avaliable */
-
-                    /* Call chooser to get a frame to free*/
-                    selectedFrame = MMU.chooser();
-                    /* Reserve the frame, preventing it from being taken away */
-                    selectedFrame.setReserved(thread.getTask());
-
-                    /* Get the old page to swap */
-                    oldPage = selectedFrame.getPage();
+                    /* Not a free frame */
 
                     /* Check the dirty bit */
-                    if(selectedFrame.isDirty())
+                    if(!selectedFrame.isDirty())
+                    {
+                        /* Frame is clean */
+
+                        /* Free the frame */
+                        selectedFrame.setPage(null);
+                        selectedFrame.setDirty(false);
+                        selectedFrame.setReferenced(false);
+                        /* Update page table */
+                        oldPage.setValid(false);
+                        oldPage.setFrame(null);
+
+                        /* set the frame of P to F */
+                        page.setFrame(selectedFrame);
+
+                        /* swap in operation */
+                        swapFile = thread.getTask().getSwapFile();
+                        swapFile.read(page.getID(), page, thread);
+                    }
+                    else
                     {
                         /* Frame is dirty */
 
@@ -178,25 +191,6 @@ public class PageFaultHandler extends IflPageFaultHandler
                             swapFile = thread.getTask().getSwapFile();
                             swapFile.read(page.getID(), page, thread);
                         }
-                    }
-                    else
-                    {
-                        /* Frame is clean */
-
-                        /* Free the frame */
-                        selectedFrame.setPage(null);
-                        selectedFrame.setDirty(false);
-                        selectedFrame.setReferenced(false);
-                        /* Update page table */
-                        oldPage.setValid(false);
-                        oldPage.setFrame(null);
-
-                        /* set the frame of P to F */
-                        page.setFrame(selectedFrame);
-
-                        /* swap in operation */
-                        swapFile = thread.getTask().getSwapFile();
-                        swapFile.read(page.getID(), page, thread);
                     }
                 }
                 /* Double check the thread status, make sure no SIGKILL */
