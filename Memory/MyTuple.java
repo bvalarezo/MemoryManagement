@@ -21,7 +21,6 @@ public class MyTuple {
     public MyTuple(int status, FrameTableEntry freeFrame) { 
       this.status = status;
       this.freeFrame = freeFrame;
-
     }
     
     public int getStatus()

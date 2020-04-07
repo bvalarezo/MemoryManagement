@@ -91,12 +91,11 @@ public class PageFaultHandler extends IflPageFaultHandler
         FrameTableEntry selectedFrame = null;
         PageTableEntry oldPage = null;
         OpenFile swapFile = null;
-        page.setValidatingThread(thread);
         /* Check if the page is valid */
         if(page.isValid())
         {
-            /* Page is valid */
-            retval = FAILURE;
+            /* Page is valid, waste of time */
+            return FAILURE;
         }
         else
         {
@@ -108,9 +107,12 @@ public class PageFaultHandler extends IflPageFaultHandler
             /* Check if memory is avaliable */
             if(t.getStatus() == NotEnoughMemory)
                 /* ENOMEM */
-                retval = NotEnoughMemory;
+                return NotEnoughMemory;
             else
             {
+                /* Begin the page fault */
+                page.setValidatingThread(thread);
+
                 /* Suspend thread with page fault event */
                 thread.suspend(pfEvent);
 
@@ -164,10 +166,12 @@ public class PageFaultHandler extends IflPageFaultHandler
                             selectedFrame.setPage(null);
                             selectedFrame.setDirty(false);
                             selectedFrame.setReferenced(false);
+
+                            /* Update the page table */
                             oldPage.setValid(false);
                             oldPage.setFrame(null);
 
-                            /* assign frame to page */
+                            /* set the frame of P to F */
                             page.setFrame(selectedFrame);
 
                             /* swap in operation */
@@ -183,10 +187,11 @@ public class PageFaultHandler extends IflPageFaultHandler
                         selectedFrame.setPage(null);
                         selectedFrame.setDirty(false);
                         selectedFrame.setReferenced(false);
+                        /* Update page table */
                         oldPage.setValid(false);
                         oldPage.setFrame(null);
 
-                        /* assign frame to page */
+                        /* set the frame of P to F */
                         page.setFrame(selectedFrame);
 
                         /* swap in operation */
@@ -196,7 +201,9 @@ public class PageFaultHandler extends IflPageFaultHandler
                 }
                 /* Double check the thread status, make sure no SIGKILL */
                 if(thread.getStatus() != ThreadCB.ThreadKill)
+                {
                     retval = SUCCESS;
+                }
                 else
                 {
                     /* Thread was killed, unset frame to page */
@@ -213,13 +220,19 @@ public class PageFaultHandler extends IflPageFaultHandler
             selectedFrame.setPage(page);
             page.setValid(true);
             if(referenceType == MemoryWrite)
+            {
                 selectedFrame.setDirty(true);
+            }
+            /* Unreserve the frame */
             selectedFrame.setUnreserved(thread.getTask());
-            pfEvent.notifyThreads();
         }
-        /* end */
-        page.notifyThreads();
+        /* The pagefault is finished */
         page.setValidatingThread(null);
+        /* Notify threads waiting on page */
+        page.notifyThreads();
+        /* Notify the thread that caused the page fault */
+        pfEvent.notifyThreads();
+        /* Dispatch */
         ThreadCB.dispatch();
         return retval;
     }
