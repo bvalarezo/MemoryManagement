@@ -25,8 +25,6 @@ public class MMU extends IflMMU
     */
     public static void init()
     {
-        MyOut.print("osp.Memory.MMU", "Entering Student Method..." + new Object() {
-        }.getClass().getEnclosingMethod().getName());
         FrameTableEntry newEntry;
         /* Init the Frame Table */
         for(int i = 0; i < getFrameTableSize(); i++)
@@ -59,8 +57,6 @@ public class MMU extends IflMMU
     static public PageTableEntry do_refer(int memoryAddress,
 					  int referenceType, ThreadCB thread)
     {
-        MyOut.print("osp.Memory.MMU", "Entering Student Method..." + new Object() {
-        }.getClass().getEnclosingMethod().getName());
         int offsetBits, pageSize, pageNumber;
         boolean refer = false;
         /* Calculate the page number based on the memoryAddress(VirtualAddress) */
@@ -119,8 +115,6 @@ public class MMU extends IflMMU
             if(referenceType == MemoryWrite)
                 P.getFrame().setDirty(true);
         }
-        MyOut.print("osp.Memory.MMU", "Leaving Student Method..." + new Object() {
-        }.getClass().getEnclosingMethod().getName());
         return P;
     }
 
@@ -162,8 +156,6 @@ public class MMU extends IflMMU
      */
     public synchronized static MyTuple getFreeFrame()
     {
-        MyOut.print("osp.Memory.MMU", "Entering Student Method..." + new Object() {
-        }.getClass().getEnclosingMethod().getName());
         FrameTableEntry freeFrame = null;
         int status = NotEnoughMemory;
         /* iterate entire frame table */
@@ -182,15 +174,11 @@ public class MMU extends IflMMU
             }
         }
         MyTuple retval = new MyTuple(status, freeFrame);
-        MyOut.print("osp.Memory.MMU", "Leaving Student Method..." + new Object() {
-        }.getClass().getEnclosingMethod().getName() +"("+status+","+freeFrame+")");
         return retval;
     }
 
     public synchronized static FrameTableEntry chooser()
     {
-        MyOut.print("osp.Memory.MMU", "Entering Student Method..." + new Object() {
-        }.getClass().getEnclosingMethod().getName());
         int targetUseCount = 0;
         boolean dirtySwitch = false;
         FrameTableEntry choosenFrame = null;
@@ -225,8 +213,6 @@ public class MMU extends IflMMU
                 }
             }
         }
-        MyOut.print("osp.Memory.MMU", "Leaving Student Method..." + new Object() {
-        }.getClass().getEnclosingMethod().getName());
         return choosenFrame;
     }
 
@@ -237,10 +223,11 @@ public class MMU extends IflMMU
 */
 class CleanerDaemon implements DaemonInterface
 {
+    /**
+     * The M2HC Cleaner hand
+     */
     public void unleash(ThreadCB thread)
     {
-        MyOut.print(this, "Entering Student Method..." + new Object() {
-        }.getClass().getEnclosingMethod().getName());
         int retval;
         PageTableEntry oldPage = null;
         OpenFile swapFile = null;
@@ -251,6 +238,7 @@ class CleanerDaemon implements DaemonInterface
              /* check if frame is not reserved, locked, or already free */
              if(!MMU.getFrame(i).isReserved() && MMU.getFrame(i).getLockCount() == 0 && MMU.getFrame(i).getPage() != null)
              {
+                 /* If the frame is dirty and has a use count of 0, swap out */
                  if(MMU.getFrame(i).getUseCount() == 0 && MMU.getFrame(i).isDirty())
                  {
                     /* Get the old page to swap */

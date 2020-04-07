@@ -53,8 +53,6 @@ public class PageTable extends IflPageTable
     */
     public void do_deallocateMemory()
     {
-        MyOut.print(this, "Entering Student Method..." + new Object() {
-        }.getClass().getEnclosingMethod().getName());
         FrameTableEntry currentFrame;
         for(int i =0; i < getPageTable().length; i++)
         {
@@ -76,13 +74,6 @@ public class PageTable extends IflPageTable
                 }
             }
         }
-        // your code goes here
-        // unset the various flags (setPage() to null it ) of the Frame
-        //for i in pgaetable
-        //setDirty() to clean it
-        //setReferenced() to unset it
-        // unreserves each frame(use getReserved() of FrameTableEntry)
-        //DONT SET FRAME ATTRIBUTE NULL DIRECTLY
     }
 
 

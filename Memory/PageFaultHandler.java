@@ -86,8 +86,6 @@ public class PageFaultHandler extends IflPageFaultHandler
 					 int referenceType,
 					 PageTableEntry page)
     {
-        MyOut.print("osp.Memory.PageFaultHandler", "Entering Student Method..." + new Object() {
-        }.getClass().getEnclosingMethod().getName());
         int retval;
         SystemEvent pfEvent = new SystemEvent("pfEvent");
         FrameTableEntry selectedFrame = null;
@@ -223,8 +221,6 @@ public class PageFaultHandler extends IflPageFaultHandler
         page.notifyThreads();
         page.setValidatingThread(null);
         ThreadCB.dispatch();
-        MyOut.print("osp.Memory.PageFaultHandler", "Leaving Student Method..." + new Object() {
-        }.getClass().getEnclosingMethod().getName());
         return retval;
     }
 
